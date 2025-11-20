@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel Together | CompanyMe</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://kit.fontawesome.com/4f5c6e70a0.js" crossorigin="anonymous"></script>
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #dae2f8 0%, #d6a4a4 100%);
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+    }
+    header {
+        background: rgba(64,103,191,0.95);
+        color: #fff;
+        padding: 20px 0;
+        text-align: center;
+        font-size: 2em;
+        font-weight: 700;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .container {
+        max-width: 700px;
+        margin: 40px auto;
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(31,38,135,0.2);
+        padding: 30px 40px;
+    }
+    h2 {
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 18px;
+    }
+    label { display:block; margin-bottom:6px; font-weight:600; color:#333; }
+    input, select, button, textarea {
+        width:100%;
+        margin-bottom:16px;
+        padding:10px;
+        border-radius:8px;
+        border:1px solid #ccc;
+        font-size: 0.95em;
+        transition: all 0.2s;
+    }
+    input:focus, textarea:focus {
+        border-color:#4067bf;
+        box-shadow:0 0 5px #4067bf;
+        outline:none;
+    }
+    button {
+        background:#4067bf;
+        color:#fff;
+        font-weight:600;
+        border:none;
+        cursor:pointer;
+        padding:12px;
+        transition:all 0.2s;
+    }
+    button:hover {
+        background:#3356a1;
+    }
+    .trip-list {
+        margin-top: 25px;
+    }
+    .trip {
+        background: #f0f3ff;
+        border-left:5px solid #4067bf;
+        border-radius:10px;
+        padding:15px;
+        margin-bottom:14px;
+        transition: transform 0.2s;
+    }
+    .trip:hover {
+        transform: scale(1.02);
+    }
+    .trip-top {
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        font-weight:600;
+    }
+    .chatbox {
+        margin-top:8px;
+        background:#fff;
+        border-radius:8px;
+        padding:10px;
+        border:1px solid #dce1ff;
+    }
+    .message {
+        background:#eef3ff;
+        border-radius:8px;
+        padding:6px 10px;
+        margin:6px 0;
+    }
+    .meta {
+        font-size:0.8em;
+        color:#666;
+        margin-bottom:4px;
+    }
+    .filters {
+        margin: 10px 0 25px 0;
+        text-align:center;
+    }
+    .filters input {
+        width: 80%;
+        padding:10px;
+        border-radius:10px;
+        border:1px solid #bbb;
+    }
+    .join-btn {
+        background:#3dbf64;
+        border:none;
+        padding:8px 12px;
+        border-radius:6px;
+        color:#fff;
+        cursor:pointer;
+        font-weight:600;
+        font-size:0.9em;
+    }
+    .join-btn:hover { background:#33a957; }
+    @media(max-width:600px){
+        .container{padding:20px;}
+        header{font-size:1.7em;}
+    }
+</style>
+</head>
+<body>
+<header><i class="fas fa-car-side"></i> Travel Together</header>
+<div class="container">
+    <h2>Post Your Trip</h2>
+    <form id="tripForm">
+        <label>Start Location:</label>
+        <input type="text" id="from" placeholder="e.g. Mumbai" required>
+        <label>Destination:</label>
+        <input type="text" id="to" placeholder="e.g. Pune" required>
+        <label>Date & Time:</label>
+        <input type="datetime-local" id="datetime" required>
+        <label>About you:</label>
+        <input type="text" id="about" placeholder="e.g. Student, loves music">
+        <button type="submit"><i class="fas fa-paper-plane"></i> Post Trip</button>
+    </form>
+
+    <div class="filters">
+        <input type="text" id="search" placeholder="🔍 Search by city (From/To)...">
+    </div>
+
+    <h2>Available Trips</h2>
+    <div id="tripList" class="trip-list"></div>
+</div>
+
+<script>
+let trips = JSON.parse(localStorage.getItem('trips')) || [];
+
+function saveTrips() {
+    localStorage.setItem('trips', JSON.stringify(trips));
+}
+
+function renderTrips(filterText = '') {
+    const list = document.getElementById('tripList');
+    list.innerHTML = '';
+
+    const filtered = trips.filter(t => 
+        t.from.toLowerCase().includes(filterText.toLowerCase()) ||
+        t.to.toLowerCase().includes(filterText.toLowerCase())
+    );
+
+    if (filtered.length === 0) {
+        list.innerHTML = "<div style='text-align:center; color:#555;'>No trips found.</div>";
+        return;
+    }
+
+    filtered.forEach((trip, idx) => {
+        list.innerHTML += `
+            <div class="trip">
+                <div class="trip-top">
+                    <div><b>${trip.from}</b> → <b>${trip.to}</b></div>
+                    <small>${new Date(trip.datetime).toLocaleString()}</small>
+                </div>
+                <div style="margin:8px 0;"><i>${trip.about || 'No details provided.'}</i></div>
+
+                <div style="margin:8px 0; font-size:0.9em; color:#333;">
+                    <b>Members:</b> ${trip.members.length > 0 ? trip.members.join(', ') : 'No members yet'}
+                </div>
+
+                <button class="join-btn" onclick="joinTrip(${idx})"><i class="fas fa-user-plus"></i> Join</button>
+                <button style="float:right;" onclick="openChat(${idx})"><i class="fas fa-comments"></i> Chat</button>
+
+                <div id="chat${idx}" class="chatbox" style="display:none;">
+                    <div id="messages${idx}" style="max-height:150px;overflow-y:auto;"></div>
+                    <textarea id="chatInput${idx}" rows="2" placeholder="Type your message..."></textarea>
+                    <button onclick="sendMessage(${idx})">Send</button>
+                </div>
+            </div>
+        `;
+        updateMessages(idx);
+    });
+}
+
+document.getElementById('tripForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    trips.push({
+        from: document.getElementById('from').value.trim(),
+        to: document.getElementById('to').value.trim(),
+        datetime: document.getElementById('datetime').value,
+        about: document.getElementById('about').value.trim(),
+        messages: [],
+        members: []
+    });
+    saveTrips();
+    renderTrips();
+    this.reset();
+});
+
+function openChat(idx){
+    const chatDiv = document.getElementById('chat'+idx);
+    chatDiv.style.display = (chatDiv.style.display === 'none') ? 'block' : 'none';
+}
+
+function sendMessage(idx){
+    const val = document.getElementById('chatInput'+idx).value.trim();
+    if(val){
+        const msgObj = {
+            text: val,
+            time: new Date().toLocaleTimeString(),
+            sender: "You"
+        };
+        trips[idx].messages.push(msgObj);
+        saveTrips();
+        document.getElementById('chatInput'+idx).value = '';
+        updateMessages(idx);
+    }
+}
+
+function updateMessages(idx){
+    const messagesDiv = document.getElementById('messages'+idx);
+    if(!messagesDiv) return;
+    messagesDiv.innerHTML = '';
+    trips[idx].messages.forEach(msg => {
+        messagesDiv.innerHTML += `
+            <div class="message">
+                <div class="meta">${msg.sender} • ${msg.time}</div>
+                ${msg.text}
+            </div>
+        `;
+    });
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function joinTrip(idx){
+    const name = prompt("Enter your name to join this trip:");
+    if(name){
+        if(!trips[idx].members.includes(name)){
+            trips[idx].members.push(name);
+            alert(`${name} joined the trip from ${trips[idx].from} → ${trips[idx].to}`);
+            saveTrips();
+            renderTrips(); // refresh member list
+        } else {
+            alert(`${name}, you already joined this trip!`);
+        }
+    }
+}
+
+document.getElementById('search').addEventListener('input', e => renderTrips(e.target.value));
+renderTrips();
+</script>
+</body>
+</html>
